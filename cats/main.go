@@ -44,8 +44,8 @@ func main() {
 		log.Printf("%+v\n", update)
 		log.Printf("got message: %+v", update.Message)
 
-		if strings.HasPrefix(update.Message.Text, "/cat") {
-			log.Printf("got /cat request from %s", update.Message.From.UserName)
+		if strings.HasPrefix(update.Message.Text, "/cat") || strings.HasPrefix(update.Message.Text, "/dog") {
+			log.Printf("got %s request from %s", update.Message.Text, update.Message.From.UserName)
 
 			chatID := update.Message.Chat.ID
 			log.Printf("cat id: %d", chatID)
@@ -64,7 +64,14 @@ func main() {
 			}
 			log.Printf("returned message: %v+", message)
 
-			pinterestResponse, err := PintrestInterests("cats")
+			var subject string
+			if strings.HasPrefix(update.Message.Text, "/cat") {
+				subject = "cats"
+			} else {
+				subject = "cute"
+			}
+
+			pinterestResponse, err := PintrestInterests(subject)
 			if err != nil {
 				log.Printf("failed to get cat image from pinterest: %v", err)
 				continue
