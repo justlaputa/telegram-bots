@@ -8,15 +8,15 @@ import (
 
 	"golang.org/x/net/context"
 	"golang.org/x/text/language"
-	"gopkg.in/telegram-bot-api.v4"
 
 	"google.golang.org/api/option"
+	"gopkg.in/telegram-bot-api.v4"
 )
 
 const (
-	MINIMUM_MESSAGE_LENGTH = 3
-	DOG_NAME               = "justlaputa"
-	CAT_NAME               = "Masami"
+	MINIMUM_MESSAGE_LENGTH = 6
+	DOG_NAME               = "Han"
+	CAT_NAME               = "Morita"
 	DOG_USE_ENGLISH        = "bad dog, why use english? let smart dog teach you"
 	DOG_USE_CHINESE        = "umm, seems dog is teaching chinese, smart dog also know Chinese"
 	DOG_USE_JAPANESE       = "good dog, you are using Japanese! let smart dog check it"
@@ -37,7 +37,7 @@ type BotReply struct {
 }
 
 func (reply BotReply) String() string {
-	result := reply.Title + "\n"
+	result := ""
 	for _, translation := range reply.Translations {
 		result = result + translation.ResultLanguage.String() + ": " + translation.TranslatedText + "\n"
 	}
@@ -192,7 +192,7 @@ func main() {
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		needReply, reply := processMessage(update.Message.From.UserName, update.Message.Text, apiKey)
+		needReply, reply := processMessage(update.Message.From.LastName, update.Message.Text, apiKey)
 
 		if needReply {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply.String())
