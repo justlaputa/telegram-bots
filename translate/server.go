@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/translate"
 
@@ -59,6 +60,8 @@ func detectLanguage(text, apiKey string) (language.Tag, error) {
 		return language.Tag{}, err
 	}
 
+	log.Printf("detecting language result: %+v", resp)
+
 	return resp[0][0].Language, nil
 }
 
@@ -76,6 +79,8 @@ func translateText(targetLanguage language.Tag, text, apiKey string) (Translatio
 		log.Printf("failed to translate by gcloud api: %v", err)
 		return Translation{}, err
 	}
+
+	log.Printf("got all translations: %+v", resp)
 
 	return Translation{targetLanguage, resp[0].Text}, nil
 }
@@ -139,9 +144,21 @@ func getReplyTranslations(fromUser string, sourceLanguage language.Tag, message,
 	return translations
 }
 
+func isTooShort(message string) bool {
+	return len(message) <= MINIMUM_MESSAGE_LENGTH
+}
+
+func isCommand(message string) bool {
+	return strings.HasPrefix(message, "/")
+}
+
+func isUrl(message string) bool {
+	return strings.HasPrefix(message, "http://") || strings.HasPrefix(message, "https://")
+}
+
 func processMessage(fromUser, message, apiKey string) (needReply bool, reply BotReply) {
-	if len(message) <= MINIMUM_MESSAGE_LENGTH {
-		log.Printf("message is too short, probably no need to process, I will skip it")
+	if isTooShort(message) || isCommand(message) || isUrl(message) {
+		log.Printf("message is not worth processing, either too short or is a command or is url, I will skip it")
 		return false, BotReply{}
 	}
 
@@ -149,6 +166,8 @@ func processMessage(fromUser, message, apiKey string) (needReply bool, reply Bot
 	if err != nil {
 		return false, BotReply{}
 	}
+
+	log.Printf("detected message language: %s", sourceLanguage)
 
 	reply = BotReply{}
 
@@ -192,7 +211,7 @@ func main() {
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		needReply, reply := processMessage(update.Message.From.LastName, update.Message.Text, apiKey)
+		needReply, reply := processMessage(update.Message.From.LastName, strings.TrimSpace(update.Message.Text), apiKey)
 
 		if needReply {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply.String())
