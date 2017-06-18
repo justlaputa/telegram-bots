@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"cloud.google.com/go/translate"
 
@@ -11,20 +12,22 @@ import (
 	"golang.org/x/text/language"
 
 	"google.golang.org/api/option"
+
 	"gopkg.in/telegram-bot-api.v4"
 )
 
 const (
-	MINIMUM_MESSAGE_LENGTH = 6
-	DOG_NAME               = "Han"
-	CAT_NAME               = "Morita"
-	DOG_USE_ENGLISH        = "bad dog, why use english? let smart dog teach you"
-	DOG_USE_CHINESE        = "umm, seems dog is teaching chinese, smart dog also know Chinese"
-	DOG_USE_JAPANESE       = "good dog, you are using Japanese! let smart dog check it"
-	CAT_USE_ENGLISH        = "bad cat, why you use English? you need teach dog Japanese! let smart dog help you"
-	CAT_USE_JAPANESE       = ""
-	CAT_USE_CHINESE        = "wow, cat is talking Chinese, let smart dog check"
-	UNKNOWN_USER_SPEAKING  = "who is speaking?"
+	MIN_MESSAGE_LENGTH    = 6
+	MAX_MESSAGE_LENGTH    = 20
+	DOG_NAME              = "Han"
+	CAT_NAME              = "Morita"
+	DOG_USE_ENGLISH       = "bad dog, why use english? let smart dog teach you"
+	DOG_USE_CHINESE       = "umm, seems dog is teaching chinese, smart dog also know Chinese"
+	DOG_USE_JAPANESE      = "good dog, you are using Japanese! let smart dog check it"
+	CAT_USE_ENGLISH       = "bad cat, why you use English? you need teach dog Japanese! let smart dog help you"
+	CAT_USE_JAPANESE      = ""
+	CAT_USE_CHINESE       = "wow, cat is talking Chinese, let smart dog check"
+	UNKNOWN_USER_SPEAKING = "who is speaking?"
 )
 
 type Translation struct {
@@ -144,8 +147,9 @@ func getReplyTranslations(fromUser string, sourceLanguage language.Tag, message,
 	return translations
 }
 
-func isTooShort(message string) bool {
-	return len(message) <= MINIMUM_MESSAGE_LENGTH
+func isGoodLength(message string) bool {
+	len := utf8.RuneCountInString(message)
+	return len > MIN_MESSAGE_LENGTH && len < MAX_MESSAGE_LENGTH
 }
 
 func isCommand(message string) bool {
@@ -157,7 +161,7 @@ func isUrl(message string) bool {
 }
 
 func processMessage(fromUser, message, apiKey string) (needReply bool, reply BotReply) {
-	if isTooShort(message) || isCommand(message) || isUrl(message) {
+	if isGoodLength(message) || isCommand(message) || isUrl(message) {
 		log.Printf("message is not worth processing, either too short or is a command or is url, I will skip it")
 		return false, BotReply{}
 	}
