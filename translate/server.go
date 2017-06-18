@@ -152,6 +152,20 @@ func isGoodLength(message string) bool {
 	return len > MIN_MESSAGE_LENGTH && len < MAX_MESSAGE_LENGTH
 }
 
+func isShort(message string) bool {
+	len := utf8.RuneCountInString(message)
+	return len <= MIN_MESSAGE_LENGTH
+}
+
+func containsFun(message string) bool {
+	return strings.Contains(message, "cat") ||
+		strings.Contains(message, "dog") ||
+		strings.Contains(message, "ねこ") ||
+		strings.Contains(message, "猫") ||
+		strings.Contains(message, "犬") ||
+		strings.Contains(message, "いぬ")
+}
+
 func isCommand(message string) bool {
 	return strings.HasPrefix(message, "/")
 }
@@ -161,7 +175,8 @@ func isUrl(message string) bool {
 }
 
 func processMessage(fromUser, message, apiKey string) (needReply bool, reply BotReply) {
-	if isGoodLength(message) || isCommand(message) || isUrl(message) {
+
+	if !isGoodLength(message) || isCommand(message) || isUrl(message) {
 		log.Printf("message is not worth processing, either too short or is a command or is url, I will skip it")
 		return false, BotReply{}
 	}
@@ -192,6 +207,13 @@ func main() {
 		log.Fatal("can not find gcloud translate api key, did you set API_KEY in environment varialbe?")
 	}
 
+	bingImageSubKey := os.Getenv("BING_IMAGE_KEY")
+	if bingImageSubKey == "" {
+		log.Fatal("can not find bing image search subscription key, did you set BING_IMAGE_KEY in environment variable?")
+	}
+
+	bingImageProvider := NewBingImageSearchProvider(bingImageSubKey)
+
 	log.Println("starting translate bot with specified token...")
 
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -215,13 +237,42 @@ func main() {
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-		needReply, reply := processMessage(update.Message.From.LastName, strings.TrimSpace(update.Message.Text), apiKey)
+		if (isShort(update.Message.Text) && containsFun(update.Message.Text)) ||
+			strings.HasPrefix(update.Message.Text, "p ") {
+			query := strings.TrimPrefix(update.Message.Text, "p ")
+			imageURL, err := bingImageProvider.getOneImage(query)
+			if err != nil {
+				log.Printf("failed to get image, skip silently")
+				continue
+			}
 
-		if needReply {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply.String())
-			msg.ReplyToMessageID = update.Message.MessageID
+			replyImage := tgbotapi.PhotoConfig{
+				BaseFile: tgbotapi.BaseFile{
+					BaseChat: tgbotapi.BaseChat{
+						ChatID:           update.Message.Chat.ID,
+						ReplyToMessageID: update.Message.MessageID,
+					},
+					FileID:      imageURL,
+					UseExisting: true,
+					MimeType:    "image/jpeg",
+				},
+			}
+			message, err := bot.Send(replyImage)
+			if err != nil {
+				log.Printf("failed to send reply, %v", err)
+			} else {
+				log.Printf("replied successful: %+v", message)
+			}
+		} else {
 
-			bot.Send(msg)
+			needReply, reply := processMessage(update.Message.From.LastName, strings.TrimSpace(update.Message.Text), apiKey)
+
+			if needReply {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply.String())
+				msg.ReplyToMessageID = update.Message.MessageID
+
+				bot.Send(msg)
+			}
 		}
 	}
 }
