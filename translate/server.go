@@ -18,15 +18,7 @@ import (
 
 const (
 	MIN_MESSAGE_LENGTH    = 6
-	MAX_MESSAGE_LENGTH    = 20
-	DOG_NAME              = "Han"
-	CAT_NAME              = "Morita"
-	DOG_USE_ENGLISH       = "bad dog, why use english? let smart dog teach you"
-	DOG_USE_CHINESE       = "umm, seems dog is teaching chinese, smart dog also know Chinese"
-	DOG_USE_JAPANESE      = "good dog, you are using Japanese! let smart dog check it"
-	CAT_USE_ENGLISH       = "bad cat, why you use English? you need teach dog Japanese! let smart dog help you"
-	CAT_USE_JAPANESE      = ""
-	CAT_USE_CHINESE       = "wow, cat is talking Chinese, let smart dog check"
+	MAX_MESSAGE_LENGTH    = 60
 	UNKNOWN_USER_SPEAKING = "who is speaking?"
 )
 
@@ -89,33 +81,7 @@ func translateText(targetLanguage language.Tag, text, apiKey string) (Translatio
 }
 
 func getReplyTitle(fromUser string, sourceLanguage language.Tag) string {
-	var reply string
-	if fromUser == DOG_NAME {
-		switch sourceLanguage {
-		case language.English:
-			reply = DOG_USE_ENGLISH
-		case language.Chinese:
-			reply = DOG_USE_CHINESE
-		case language.Japanese:
-			reply = DOG_USE_JAPANESE
-		default:
-			reply = ""
-		}
-	} else if fromUser == CAT_NAME {
-		switch sourceLanguage {
-		case language.English:
-			reply = CAT_USE_ENGLISH
-		case language.Chinese:
-			reply = CAT_USE_CHINESE
-		case language.Japanese:
-			reply = CAT_USE_JAPANESE
-		default:
-			reply = ""
-		}
-	} else {
-		reply = UNKNOWN_USER_SPEAKING
-	}
-	return reply
+	return ""
 }
 
 func getOtherLanguages(sourceLanguage language.Tag) []language.Tag {
