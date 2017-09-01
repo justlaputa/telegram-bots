@@ -124,6 +124,7 @@ func isShort(message string) bool {
 }
 
 func containsFun(message string) bool {
+	message = strings.ToLower(message)
 	return strings.Contains(message, "cat") ||
 		strings.Contains(message, "dog") ||
 		strings.Contains(message, "ねこ") ||
@@ -173,12 +174,19 @@ func main() {
 		log.Fatal("can not find gcloud translate api key, did you set API_KEY in environment varialbe?")
 	}
 
-	bingImageSubKey := os.Getenv("BING_IMAGE_KEY")
-	if bingImageSubKey == "" {
-		log.Fatal("can not find bing image search subscription key, did you set BING_IMAGE_KEY in environment variable?")
+	// bingImageSubKey := os.Getenv("BING_IMAGE_KEY")
+	// if bingImageSubKey == "" {
+	// 	log.Fatal("can not find bing image search subscription key, did you set BING_IMAGE_KEY in environment variable?")
+	// }
+	//
+	// bingImageProvider := NewBingImageSearchProvider(bingImageSubKey)
+
+	pinterestToken := os.Getenv("PINTEREST_TOKEN")
+	if pinterestToken == "" {
+		log.Fatal("can not find pinterest api token, did you set PINTEREST_TOKEN in environment varialbe?")
 	}
 
-	bingImageProvider := NewBingImageSearchProvider(bingImageSubKey)
+	pinterest := &Pinterest{APIToken: pinterestToken}
 
 	log.Println("starting translate bot with specified token...")
 
@@ -204,9 +212,9 @@ func main() {
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
 		if (isShort(update.Message.Text) && containsFun(update.Message.Text)) ||
-			strings.HasPrefix(update.Message.Text, "p ") {
-			query := strings.TrimPrefix(update.Message.Text, "p ")
-			imageURL, err := bingImageProvider.getOneImage(query)
+			strings.HasPrefix(update.Message.Text, "p ") || strings.HasPrefix(update.Message.Text, "P ") {
+			query := update.Message.Text[2:]
+			imageURL, err := pinterest.Search(query)
 			if err != nil {
 				log.Printf("failed to get image, skip silently")
 				continue
