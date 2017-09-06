@@ -2,9 +2,13 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 	"unicode/utf8"
+
+	"github.com/justlaputa/telegram-bots/translate/image"
 
 	"cloud.google.com/go/translate"
 
@@ -174,19 +178,17 @@ func main() {
 		log.Fatal("can not find gcloud translate api key, did you set API_KEY in environment varialbe?")
 	}
 
-	// bingImageSubKey := os.Getenv("BING_IMAGE_KEY")
-	// if bingImageSubKey == "" {
-	// 	log.Fatal("can not find bing image search subscription key, did you set BING_IMAGE_KEY in environment variable?")
-	// }
-	//
-	// bingImageProvider := NewBingImageSearchProvider(bingImageSubKey)
-
-	pinterestToken := os.Getenv("PINTEREST_TOKEN")
-	if pinterestToken == "" {
-		log.Fatal("can not find pinterest api token, did you set PINTEREST_TOKEN in environment varialbe?")
+	cseKey := os.Getenv("GCSE_API_KEY")
+	if cseKey == "" {
+		log.Fatal("can not find google cse api key, did you set GCSE_API_KEY in environment varialbe?")
 	}
 
-	pinterest := &Pinterest{APIToken: pinterestToken}
+	cseID := os.Getenv("GCSE_ID")
+	if cseID == "" {
+		log.Fatal("can not find google cse id, did you set GCSE_ID in environment varialbe?")
+	}
+
+	gcse := image.NewGoogleCustomSearch(cseID, cseKey)
 
 	log.Println("starting translate bot with specified token...")
 
@@ -213,12 +215,18 @@ func main() {
 
 		if (isShort(update.Message.Text) && containsFun(update.Message.Text)) ||
 			strings.HasPrefix(update.Message.Text, "p ") || strings.HasPrefix(update.Message.Text, "P ") {
-			query := update.Message.Text[2:]
-			imageURL, err := pinterest.Search(query)
+			query := update.Message.Text
+			if strings.ToLower(query[:2]) == "p " {
+				query = query[2:]
+			}
+
+			images, err := gcse.Search(query)
 			if err != nil {
 				log.Printf("failed to get image, skip silently")
 				continue
 			}
+
+			imageURL := randomImage(images).Link
 
 			replyImage := tgbotapi.PhotoConfig{
 				BaseFile: tgbotapi.BaseFile{
@@ -249,4 +257,10 @@ func main() {
 			}
 		}
 	}
+}
+
+func randomImage(images []image.Image) image.Image {
+	rand.Seed(time.Now().UTC().UnixNano())
+	n := rand.Intn(len(images))
+	return images[n]
 }
