@@ -1,11 +1,12 @@
 BINARY = translate
 IMAGENAME = laputa/translate
+SRC = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 include secrets
 
 .PHONY: clean docker-image build deploy
 
-$(BINARY):
+$(BINARY): $(SRC)
 	GOOS=linux GOARCH=amd64 go build -o $(BINARY)
 
 clean:
@@ -22,7 +23,10 @@ deploy: build
 	hyper rm $(shell hyper ps -f "name=telegram-translate" -qa)
 	hyper rmi laputa/translate:latest
 	hyper run --size=s1 -d --restart=always --name telegram-translate \
-		-e PINTEREST_TOKEN="$(PINTEREST_TOKEN)" \
+		-e GCSE_API_KEY="$(GCSE_API_KEY)" \
+		-e GCSE_ID="$(GCSE_ID)" \
 		-e BOT_TOKEN="$(BOT_TOKEN)" \
 		-e API_KEY="$(API_KEY)" \
+		-e SLACK_API_TOKEN=$(SLACK_API_TOKEN) \
+		-e WUNDERGROUND_API_KEY=$(WUNDERGROUND_API_KEY) \
 		laputa/translate
