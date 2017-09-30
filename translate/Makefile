@@ -19,10 +19,10 @@ build: docker-image
 
 deploy: build
 	docker push $(IMAGENAME)
-	hyper stop $(shell hyper ps -f "name=telegram-translate" -qa)
-	hyper rm $(shell hyper ps -f "name=telegram-translate" -qa)
-	hyper rmi laputa/translate:latest
-	hyper run --size=s1 -d --restart=always --name telegram-translate \
+	-ssh vultr docker stop telegram-translate
+	-ssh vultr docker rm telegram-translate
+	ssh vultr docker pull laputa/translate
+	ssh vultr docker run -d --restart=always --name telegram-translate \
 		-e GCSE_API_KEY="$(GCSE_API_KEY)" \
 		-e GCSE_ID="$(GCSE_ID)" \
 		-e BOT_TOKEN="$(BOT_TOKEN)" \

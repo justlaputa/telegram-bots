@@ -95,7 +95,7 @@ func getOtherLanguages(sourceLanguage language.Tag) []language.Tag {
 	case language.English:
 		return []language.Tag{language.Japanese, language.Chinese}
 	case language.Japanese:
-		return []language.Tag{language.English, language.Chinese}
+		return []language.Tag{language.English}
 	default:
 		return []language.Tag{language.Japanese, language.English, language.Chinese}
 	}
